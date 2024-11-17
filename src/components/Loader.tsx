@@ -1,5 +1,5 @@
 // src/components/Loader.tsx
-import Logo from "../public/Emblema_CRI.svg";
+import Logo from "../../public/Emblema_CRI.svg";
 
 export function Loader() {
   return (

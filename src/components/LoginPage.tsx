@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { LogIn } from 'lucide-react';
-import Logo from '../public/Emblema_CRI.svg';
+import Logo from "../../public/Emblema_CRI.svg";
 
 export function LoginPage() {
   const [username, setUsername] = useState('');

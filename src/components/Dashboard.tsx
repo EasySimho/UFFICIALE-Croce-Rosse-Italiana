@@ -8,7 +8,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { Person } from "../types";
-import Logo from "../public/Emblema_CRI.svg";
+import Logo from "../../public/Emblema_CRI.svg";
 import { Loader } from "./Loader";
 
 export function Dashboard() {
