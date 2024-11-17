@@ -3,7 +3,7 @@ import { PersonForm } from "./PersonForm";
 import { PersonList } from "./PersonList";
 import { DeadlineCalendar } from "./DeadlineCalendar";
 import { ThemeControls } from "./ThemeControls";
-import { Heart, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
