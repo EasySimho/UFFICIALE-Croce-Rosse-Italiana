@@ -6,10 +6,15 @@ import { fileURLToPath } from 'url';
 import * as XLSX from 'xlsx';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const app = express();
-const PORT = 3000;
-const DB_PATH = join(__dirname, 'database.xlsx');
-const REPORT_PATH = join(__dirname, 'report.xlsx');
+const isDev = process.env.NODE_ENV !== 'production';
+const DB_PATH = isDev 
+  ? join(__dirname, 'database.xlsx')
+  : '/tmp/database.xlsx';  // Usa /tmp per Vercel
+const REPORT_PATH = isDev
+  ? join(__dirname, 'report.xlsx') 
+  : '/tmp/report.xlsx';
+
+  const app = express();
 
 app.use(cors());
 app.use(express.json());
@@ -35,13 +40,27 @@ const ensureDeliverySchedule = (person) => {
 async function initializeDB() {
   try {
     await readFile(DB_PATH);
+    await readFile(REPORT_PATH);
   } catch {
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet([]);
-    XLSX.utils.book_append_sheet(wb, ws, "Database");
-    await writeFile(DB_PATH, XLSX.write(wb, { type: 'buffer' }));
+    // Create empty workbooks if files don't exist
+    const workbook = XLSX.utils.book_new();
+    const sheet = XLSX.utils.json_to_sheet([]);
+    XLSX.utils.book_append_sheet(workbook, sheet, "Database");
+    await writeFile(DB_PATH, XLSX.write(workbook, { type: 'buffer' }));
+    await writeFile(REPORT_PATH, XLSX.write(workbook, { type: 'buffer' }));
   }
 }
+
+app.use(async (req, res, next) => {
+  try {
+    await initializeDB();
+    next();
+  } catch (error) {
+    console.error('Failed to initialize database:', error);
+    res.status(500).json({ error: 'Database initialization failed' });
+  }
+});
+
 
 // Read data from Excel
 async function readData() {
@@ -180,9 +199,13 @@ app.delete('/api/people/:id', async (req, res) => {
   }
 });
 
+export default app;
+
+
 // Initialize database and start server
-initializeDB().then(() => {
+if (isDev) {
+  const PORT = 3000;
   app.listen(PORT, () => {
-    console.log(`Server in ascolto sulla porta: ${PORT}`);
+    console.log(`Server running on port ${PORT}`);
   });
-});
+}
