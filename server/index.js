@@ -41,7 +41,9 @@ async function initializeDB() {
   try {
     await readFile(DB_PATH);
     await readFile(REPORT_PATH);
-  } catch {
+    console.log('Database files exist.');
+  } catch (error) {
+    console.log('Database files do not exist, creating new ones.');
     // Create empty workbooks if files don't exist
     const workbook = XLSX.utils.book_new();
     const sheet = XLSX.utils.json_to_sheet([]);
@@ -88,58 +90,62 @@ async function readData() {
 
 // Write data to both Excel files
 async function writeData(data) {
-  // Prepare data for Excel
-  const preparedData = data.map(person => ({
-    ...person,
-    deliverySchedule: JSON.stringify(person.deliverySchedule)
-  }));
+  try {
+    // Prepare data for Excel
+    const preparedData = data.map(person => ({
+      ...person,
+      deliverySchedule: JSON.stringify(person.deliverySchedule)
+    }));
 
-  // Write complete database
-  const dbWorkbook = XLSX.utils.book_new();
-  const dbSheet = XLSX.utils.json_to_sheet(preparedData);
-  XLSX.utils.book_append_sheet(dbWorkbook, dbSheet, "Database");
-  await writeFile(DB_PATH, XLSX.write(dbWorkbook, { type: 'buffer' }));
-  
-  // Create human-readable report
-  const reportData = data.map(person => ({
-    'Nome': person.name,
-    'Cognome': person.surname,
-    'Adulti': person.adults,
-    'Minori': person.children,
-    'Indirizzo': person.address,
-    'Telefono': person.phone,
-    'Pacchi (Ricevuti/Totali)': `${person.boxesReceived}/${person.boxesNeeded}`,
-    'Note': person.notes || '',
-    'Consegne': JSON.stringify(person.deliverySchedule) // Aggiungi questo
-  }));
+    // Write complete database
+    const dbWorkbook = XLSX.utils.book_new();
+    const dbSheet = XLSX.utils.json_to_sheet(preparedData);
+    XLSX.utils.book_append_sheet(dbWorkbook, dbSheet, "Database");
+    await writeFile(DB_PATH, XLSX.write(dbWorkbook, { type: 'buffer' }));
+    
+    // Create human-readable report
+    const reportData = data.map(person => ({
+      'Nome': person.name,
+      'Cognome': person.surname,
+      'Adulti': person.adults,
+      'Minori': person.children,
+      'Indirizzo': person.address,
+      'Telefono': person.phone,
+      'Pacchi (Ricevuti/Totali)': `${person.boxesReceived}/${person.boxesNeeded}`,
+      'Note': person.notes || '',
+      'Consegne': JSON.stringify(person.deliverySchedule) // Aggiungi questo
+    }));
 
-  const reportWorkbook = XLSX.utils.book_new();
-  const reportSheet = XLSX.utils.json_to_sheet(reportData, {
-    header: ['Nome', 'Cognome', 'Adulti', 'Minori', 'Indirizzo', 'Telefono', 'Pacchi (Ricevuti/Totali)', 'Note']
-  });
+    const reportWorkbook = XLSX.utils.book_new();
+    const reportSheet = XLSX.utils.json_to_sheet(reportData, {
+      header: ['Nome', 'Cognome', 'Adulti', 'Minori', 'Indirizzo', 'Telefono', 'Pacchi (Ricevuti/Totali)', 'Note']
+    });
 
-  // Apply styles to headers
-  const range = XLSX.utils.decode_range(reportSheet['!ref']);
-  for (let C = range.s.c; C <= range.e.c; ++C) {
-    const address = XLSX.utils.encode_cell({ r: 0, c: C });
-    reportSheet[address].s = headerStyle;
+    // Apply styles to headers
+    const range = XLSX.utils.decode_range(reportSheet['!ref']);
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      const address = XLSX.utils.encode_cell({ r: 0, c: C });
+      reportSheet[address].s = headerStyle;
+    }
+
+    // Set column widths
+    const colWidths = [
+      { wch: 15 }, // Nome
+      { wch: 15 }, // Cognome
+      { wch: 8 },  // Adulti
+      { wch: 8 },  // Minori
+      { wch: 30 }, // Indirizzo
+      { wch: 15 }, // Telefono
+      { wch: 20 }, // Pacchi
+      { wch: 40 }  // Note
+    ];
+    reportSheet['!cols'] = colWidths;
+
+    XLSX.utils.book_append_sheet(reportWorkbook, reportSheet, "Report Assistenza");
+    await writeFile(REPORT_PATH, XLSX.write(reportWorkbook, { type: 'buffer' }));
+  } catch (error) {
+    console.error('Error writing data:', error);
   }
-
-  // Set column widths
-  const colWidths = [
-    { wch: 15 }, // Nome
-    { wch: 15 }, // Cognome
-    { wch: 8 },  // Adulti
-    { wch: 8 },  // Minori
-    { wch: 30 }, // Indirizzo
-    { wch: 15 }, // Telefono
-    { wch: 20 }, // Pacchi
-    { wch: 40 }  // Note
-  ];
-  reportSheet['!cols'] = colWidths;
-
-  XLSX.utils.book_append_sheet(reportWorkbook, reportSheet, "Report Assistenza");
-  await writeFile(REPORT_PATH, XLSX.write(reportWorkbook, { type: 'buffer' }));
 }
 
 // Routes
