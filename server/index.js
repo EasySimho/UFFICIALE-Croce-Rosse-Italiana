@@ -5,6 +5,7 @@ import { put, list, del } from '@vercel/blob';
 
 const DB_FILE = 'database.xlsx';
 const REPORT_FILE = 'report.xlsx';
+let latestDbUrl = null; // Cache the latest URL
 
 async function uploadFile(fileName, buffer) {
   try {
@@ -29,6 +30,10 @@ async function uploadFile(fileName, buffer) {
       access: 'public',
       addRandomSuffix: false // Prevent random suffixes
     });
+
+    if (fileName === DB_FILE) {
+      latestDbUrl = url;
+    }
     
     console.log(`Successfully uploaded ${fileName} at ${url}`);
     return url;
@@ -41,6 +46,18 @@ async function uploadFile(fileName, buffer) {
 async function downloadFile(fileName) {
   try {
     console.log(`Downloading ${fileName} from Vercel Blob...`);
+    
+    // If we have a cached URL for the DB file, use it
+    if (fileName === DB_FILE && latestDbUrl) {
+      const response = await fetch(latestDbUrl);
+      if (response.ok) {
+        const buffer = await response.arrayBuffer();
+        console.log(`Successfully downloaded ${fileName} from cache`);
+        return buffer;
+      }
+    }
+
+    // Otherwise fetch the list and find the latest file
     const { blobs } = await list();
     const fileBlob = blobs.find(b => b.pathname === fileName);
     
@@ -53,6 +70,12 @@ async function downloadFile(fileName) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const buffer = await response.arrayBuffer();
+    
+    // Update cache if it's the DB file
+    if (fileName === DB_FILE) {
+      latestDbUrl = fileBlob.url;
+    }
+
     console.log(`Successfully downloaded ${fileName}`);
     return buffer;
   } catch (error) {
