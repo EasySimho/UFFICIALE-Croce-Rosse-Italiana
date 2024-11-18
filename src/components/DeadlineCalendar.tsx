@@ -7,50 +7,63 @@ interface DeadlineCalendarProps {
 }
 
 export function DeadlineCalendar({ people }: DeadlineCalendarProps) {
-  const getNextDeliveries = (person: Person): Date => {
+  function getNextDeliveries(person: Person): Date {
     const currentDate = new Date();
-
     if (!person.deliverySchedule?.startDate) {
       return currentDate;
     }
 
-    const nextDelivery = new Date(
-      person.deliverySchedule.nextDelivery || person.deliverySchedule.startDate
-    );
-
-    if (isBefore(nextDelivery, currentDate)) {
+    // Start from the initial delivery date
+    let nextDelivery = new Date(person.deliverySchedule.startDate);
+    
+    // Skip already received deliveries
+    for (let i = 0; i < person.boxesReceived; i++) {
       switch (person.deliverySchedule.type) {
         case "weekly":
-          return addWeeks(nextDelivery, 1);
+          nextDelivery = addWeeks(nextDelivery, 1);
+          break;
         case "monthly":
-          return addMonths(nextDelivery, 1);
+          nextDelivery = addMonths(nextDelivery, 1);
+          break;
+        case "custom":
+          const customDays = person.deliverySchedule.customDays || [];
+          if (customDays.length === 0) continue;
+          const currentDay = nextDelivery.getDate();
+          const nextDay = customDays.find(day => day > currentDay) || customDays[0];
+          nextDelivery = new Date(
+            nextDelivery.getFullYear(),
+            nextDelivery.getMonth() + (nextDay <= currentDay ? 1 : 0),
+            nextDay
+          );
+          break;
+      }
+    }
+
+    // If the calculated next delivery is in the past, move it forward
+    while (isBefore(nextDelivery, currentDate)) {
+      switch (person.deliverySchedule.type) {
+        case "weekly":
+          nextDelivery = addWeeks(nextDelivery, 1);
+          break;
+        case "monthly":
+          nextDelivery = addMonths(nextDelivery, 1);
+          break;
         case "custom":
           const customDays = person.deliverySchedule.customDays || [];
           if (customDays.length === 0) return nextDelivery;
-
-          const currentDay = currentDate.getDate();
-          const nextDay =
-            customDays.find((day) => day > currentDay) || customDays[0];
-          const nextDate = new Date(
-            currentDate.getFullYear(),
-            currentDate.getMonth(),
+          const currentDay = nextDelivery.getDate();
+          const nextDay = customDays.find(day => day > currentDay) || customDays[0];
+          nextDelivery = new Date(
+            nextDelivery.getFullYear(),
+            nextDelivery.getMonth() + (nextDay <= currentDay ? 1 : 0),
             nextDay
           );
-
-          if (isBefore(nextDate, currentDate)) {
-            return new Date(
-              currentDate.getFullYear(),
-              currentDate.getMonth() + 1,
-              customDays[0]
-            );
-          }
-          return nextDate;
-        default:
-          return nextDelivery;
+          break;
       }
     }
+
     return nextDelivery;
-  };
+  }
 
   const nextDeliveries = people
     .filter(
