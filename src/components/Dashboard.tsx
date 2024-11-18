@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import { Person } from '../types';
+import Logo from "../../public/Emblema_CRI.svg";
 
 export function Dashboard() {
   const { logout } = useAuth();
@@ -102,7 +103,7 @@ export function Dashboard() {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Heart className="text-white" fill="white" />
+              <img src={Logo}  className='h-10 w-10'/>
               Croce Rossa Italiana
             </h1>
             <p>
