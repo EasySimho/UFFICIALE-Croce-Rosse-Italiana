@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import { createClient } from '@supabase/supabase-js';
 import * as XLSX from 'xlsx';
-import NodeCache from 'node-cache';
 
 // Supabase setup with env variables
 const supabase = createClient(
@@ -13,15 +12,6 @@ const supabase = createClient(
 const BUCKET_NAME = 'database';
 const DB_FILE = 'database.xlsx';
 const REPORT_FILE = 'report.xlsx';
-
-// Cache setup (TTL: 1 minuti)
-const cache = new NodeCache({ stdTTL: 60 });
-
-// Cache keys
-const CACHE_KEYS = {
-  DB_DATA: 'db_data',
-  LAST_UPDATE: 'last_update'
-};
 
 async function uploadFile(fileName, buffer) {
   try {
@@ -42,25 +32,13 @@ async function uploadFile(fileName, buffer) {
 
 async function downloadFile(fileName) {
   try {
-    // Check cache first
-    const cachedData = cache.get(CACHE_KEYS.DB_DATA);
-    if (cachedData) {
-      console.log('Returning cached data');
-      return cachedData;
-    }
-
-    console.log(`Cache miss - downloading ${fileName} from Supabase...`);
+    console.log(`Downloading ${fileName} from Supabase storage...`);
     const { data, error } = await supabase.storage
       .from(BUCKET_NAME)
       .download(fileName);
-    
     if (error) throw error;
-
-    const buffer = await data.arrayBuffer();
-    // Store in cache
-    cache.set(CACHE_KEYS.DB_DATA, buffer);
-    
-    return buffer;
+    console.log(`Successfully downloaded ${fileName}`);
+    return await data.arrayBuffer();
   } catch (error) {
     console.error(`Error downloading ${fileName}:`, error);
     throw error;
@@ -143,71 +121,63 @@ async function readData() {
 
 // Write data to both Excel files
 async function writeData(data) {
-  try {
-    // Prepare data for Excel, ensuring foodList is stringified
-    const preparedData = data.map(person => ({
-      ...person,
-      deliverySchedule: JSON.stringify(person.deliverySchedule),
-      foodList: person.foodList ? JSON.stringify(person.foodList) : undefined
-    }));
+  // Prepare data for Excel, ensuring foodList is stringified
+  const preparedData = data.map(person => ({
+    ...person,
+    deliverySchedule: JSON.stringify(person.deliverySchedule),
+    foodList: person.foodList ? JSON.stringify(person.foodList) : undefined
+  }));
 
-    // Write complete database
-    const dbWorkbook = XLSX.utils.book_new();
-    const dbSheet = XLSX.utils.json_to_sheet(preparedData);
-    XLSX.utils.book_append_sheet(dbWorkbook, dbSheet, "Database");
-    
-    const dbBuffer = XLSX.write(dbWorkbook, { type: 'buffer' });
-    await uploadFile(DB_FILE, dbBuffer);
+  // Write complete database
+  const dbWorkbook = XLSX.utils.book_new();
+  const dbSheet = XLSX.utils.json_to_sheet(preparedData);
+  XLSX.utils.book_append_sheet(dbWorkbook, dbSheet, "Database");
+  
+  const dbBuffer = XLSX.write(dbWorkbook, { type: 'buffer' });
+  await uploadFile(DB_FILE, dbBuffer);
 
-    // Create human-readable report
-    const reportData = data.map(person => ({
-      'Nome': person.name,
-      'Cognome': person.surname,
-      'Adulti': person.adults,
-      'Minori': person.children,
-      'Indirizzo': person.address,
-      'Telefono': person.phone,
-      'Pacchi (Ricevuti/Totali)': `${person.boxesReceived}/${person.boxesNeeded}`,
-      'Note': person.notes || '',
-      'Consegne': JSON.stringify(person.deliverySchedule) // Aggiungi questo
-    }));
+  // Create human-readable report
+  const reportData = data.map(person => ({
+    'Nome': person.name,
+    'Cognome': person.surname,
+    'Adulti': person.adults,
+    'Minori': person.children,
+    'Indirizzo': person.address,
+    'Telefono': person.phone,
+    'Pacchi (Ricevuti/Totali)': `${person.boxesReceived}/${person.boxesNeeded}`,
+    'Note': person.notes || '',
+    'Consegne': JSON.stringify(person.deliverySchedule) // Aggiungi questo
+  }));
 
-    const reportWorkbook = XLSX.utils.book_new();
-    const reportSheet = XLSX.utils.json_to_sheet(reportData, {
-      header: ['Nome', 'Cognome', 'Adulti', 'Minori', 'Indirizzo', 'Telefono', 'Pacchi (Ricevuti/Totali)', 'Note']
-    });
+  const reportWorkbook = XLSX.utils.book_new();
+  const reportSheet = XLSX.utils.json_to_sheet(reportData, {
+    header: ['Nome', 'Cognome', 'Adulti', 'Minori', 'Indirizzo', 'Telefono', 'Pacchi (Ricevuti/Totali)', 'Note']
+  });
 
-    // Apply styles to headers
-    const range = XLSX.utils.decode_range(reportSheet['!ref']);
-    for (let C = range.s.c; C <= range.e.c; ++C) {
-      const address = XLSX.utils.encode_cell({ r: 0, c: C });
-      reportSheet[address].s = headerStyle;
-    }
-
-    // Set column widths
-    const colWidths = [
-      { wch: 15 }, // Nome
-      { wch: 15 }, // Cognome
-      { wch: 8 },  // Adulti
-      { wch: 8 },  // Minori
-      { wch: 30 }, // Indirizzo
-      { wch: 15 }, // Telefono
-      { wch: 20 }, // Pacchi
-      { wch: 40 }  // Note
-    ];
-    reportSheet['!cols'] = colWidths;
-
-    XLSX.utils.book_append_sheet(reportWorkbook, reportSheet, "Report Assistenza");
-    
-    const reportBuffer = XLSX.write(reportWorkbook, { type: 'buffer' });
-    await uploadFile(REPORT_FILE, reportBuffer);
-
-    // Invalidate cache after write
-    cache.del(CACHE_KEYS.DB_DATA);
-  } catch (error) {
-    console.error('Error writing data:', error);
-    throw error;
+  // Apply styles to headers
+  const range = XLSX.utils.decode_range(reportSheet['!ref']);
+  for (let C = range.s.c; C <= range.e.c; ++C) {
+    const address = XLSX.utils.encode_cell({ r: 0, c: C });
+    reportSheet[address].s = headerStyle;
   }
+
+  // Set column widths
+  const colWidths = [
+    { wch: 15 }, // Nome
+    { wch: 15 }, // Cognome
+    { wch: 8 },  // Adulti
+    { wch: 8 },  // Minori
+    { wch: 30 }, // Indirizzo
+    { wch: 15 }, // Telefono
+    { wch: 20 }, // Pacchi
+    { wch: 40 }  // Note
+  ];
+  reportSheet['!cols'] = colWidths;
+
+  XLSX.utils.book_append_sheet(reportWorkbook, reportSheet, "Report Assistenza");
+  
+  const reportBuffer = XLSX.write(reportWorkbook, { type: 'buffer' });
+  await uploadFile(REPORT_FILE, reportBuffer);
 }
 
 // Routes
