@@ -1,9 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import * as XLSX from 'xlsx';
-import { put, list, get, del } from '@vercel/blob';
+import { put, list } from '@vercel/blob';
 
-const BUCKET_NAME = 'database';
 const DB_FILE = 'database.xlsx';
 const REPORT_FILE = 'report.xlsx';
 
