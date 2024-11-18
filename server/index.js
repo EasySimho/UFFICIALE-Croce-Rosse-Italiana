@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import * as XLSX from 'xlsx';
 import { createClient } from '@supabase/supabase-js';
-import { put } from '@vercel/blob';
 import cron from 'node-cron';
 
 const supabase = createClient(
