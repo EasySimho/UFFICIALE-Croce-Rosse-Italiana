@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import * as XLSX from 'xlsx';
-import { put, list } from '@vercel/blob';
+import { put, list, del } from '@vercel/blob';
 
 const DB_FILE = 'database.xlsx';
 const REPORT_FILE = 'report.xlsx';
@@ -9,12 +9,27 @@ const REPORT_FILE = 'report.xlsx';
 async function uploadFile(fileName, buffer) {
   try {
     console.log(`Uploading ${fileName} to Vercel Blob...`);
+    
+    // Delete old files first
+    const { blobs } = await list();
+    const oldFiles = blobs.filter(b => b.pathname === fileName);
+    
+    // Delete each old file
+    for (const file of oldFiles) {
+      console.log(`Deleting old file: ${file.pathname}`);
+      await del(file.url);
+    }
+
+    // Upload new file
     const blob = new Blob([buffer], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     });
+    
     const { url } = await put(fileName, blob, {
       access: 'public',
+      addRandomSuffix: false // Prevent random suffixes
     });
+    
     console.log(`Successfully uploaded ${fileName} at ${url}`);
     return url;
   } catch (error) {
