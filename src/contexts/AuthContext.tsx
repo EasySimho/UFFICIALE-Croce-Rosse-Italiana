@@ -18,7 +18,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [isAuthenticated]);
 
   const login = (username: string, password: string) => {
-    if (username === 'Operatore' && password === 'CriBiella' || username === 'admin' && password === '') {
+    if (username === 'Operatore' && password === 'CriBiella' || username === 'admin' && password === '>') {
       setIsAuthenticated(true);
       return true;
     }
