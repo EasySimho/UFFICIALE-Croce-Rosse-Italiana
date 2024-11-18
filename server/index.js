@@ -1,13 +1,7 @@
 import express from 'express';
 import cors from 'cors';
-import { createClient } from '@supabase/supabase-js';
 import * as XLSX from 'xlsx';
-
-// Supabase setup with env variables
-const supabase = createClient(
-  'https://gewhmnxsxjjowabtldcl.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdld2htbnhzeGpqb3dhYnRsZGNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzE5MjY0MDAsImV4cCI6MjA0NzUwMjQwMH0.5pPsxBvlDGNfxwLcUgb7eG52vEwCiTHeDnTBGvLqQl8'
-);
+import { put, list, get, del } from '@vercel/blob';
 
 const BUCKET_NAME = 'database';
 const DB_FILE = 'database.xlsx';
@@ -15,15 +9,15 @@ const REPORT_FILE = 'report.xlsx';
 
 async function uploadFile(fileName, buffer) {
   try {
-    console.log(`Uploading ${fileName} to Supabase storage...`);
-    const { error } = await supabase.storage
-      .from(BUCKET_NAME)
-      .upload(fileName, buffer, {
-        upsert: true,
-        contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-      });
-    if (error) throw error;
+    console.log(`Uploading ${fileName} to Vercel Blob...`);
+    const blob = new Blob([buffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    const { url } = await put(fileName, blob, {
+      access: 'public',
+    });
     console.log(`Successfully uploaded ${fileName}`);
+    return url;
   } catch (error) {
     console.error(`Error uploading ${fileName}:`, error);
     throw error;
@@ -32,13 +26,18 @@ async function uploadFile(fileName, buffer) {
 
 async function downloadFile(fileName) {
   try {
-    console.log(`Downloading ${fileName} from Supabase storage...`);
-    const { data, error } = await supabase.storage
-      .from(BUCKET_NAME)
-      .download(fileName);
-    if (error) throw error;
+    console.log(`Downloading ${fileName} from Vercel Blob...`);
+    const { blobs } = await list();
+    const fileBlob = blobs.find(b => b.pathname === fileName);
+    
+    if (!fileBlob) {
+      throw new Error('File not found');
+    }
+
+    const response = await fetch(fileBlob.url);
+    const buffer = await response.arrayBuffer();
     console.log(`Successfully downloaded ${fileName}`);
-    return await data.arrayBuffer();
+    return buffer;
   } catch (error) {
     console.error(`Error downloading ${fileName}:`, error);
     throw error;
