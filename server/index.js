@@ -9,12 +9,24 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const isDev = process.env.NODE_ENV !== 'production';
 const DB_PATH = isDev 
   ? join(__dirname, 'database.xlsx')
-  : '/tmp/database.xlsx';  // Usa /tmp per Vercel
+  : '/var/data/database.xlsx';  // Directory persistente invece di /tmp
+
 const REPORT_PATH = isDev
   ? join(__dirname, 'report.xlsx') 
-  : '/tmp/report.xlsx';
+  : '/var/data/report.xlsx';
 
-  const app = express();
+// Assicurati che la directory esista
+const ensureDirectory = async () => {
+  if (!isDev) {
+    try {
+      await fs.promises.mkdir('/var/data', { recursive: true });
+    } catch (error) {
+      console.error('Failed to create data directory:', error);
+    }
+  }
+};
+
+const app = express();
 
 app.use(cors());
 app.use(express.json());
@@ -51,16 +63,17 @@ async function initializeDB() {
   }
 }
 
+// Aggiungi la chiamata a ensureDirectory prima di initializeDB
 app.use(async (req, res, next) => {
   try {
+    await ensureDirectory();
     await initializeDB();
     next();
   } catch (error) {
-    console.error('Failed to initialize database:', error);
-    res.status(500).json({ error: 'Database initialization failed' });
+    console.error('Failed to initialize:', error);
+    res.status(500).json({ error: 'Initialization failed' });
   }
 });
-
 
 // Read data from Excel
 async function readData() {
