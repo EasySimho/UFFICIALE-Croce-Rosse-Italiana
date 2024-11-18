@@ -1,30 +1,68 @@
 import express from 'express';
 import cors from 'cors';
-import { readFile, writeFile } from 'fs/promises';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { createClient } from '@supabase/supabase-js';
 import * as XLSX from 'xlsx';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const isDev = process.env.NODE_ENV !== 'production';
-const DB_PATH = isDev 
-  ? join(__dirname, 'database.xlsx')
-  : '/var/data/database.xlsx';  // Directory persistente invece di /tmp
+// Supabase setup with env variables
+const supabase = createClient(
+  'https://gewhmnxsxjjowabtldcl.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdld2htbnhzeGpqb3dhYnRsZGNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzE5MjY0MDAsImV4cCI6MjA0NzUwMjQwMH0.5pPsxBvlDGNfxwLcUgb7eG52vEwCiTHeDnTBGvLqQl8'
+);
 
-const REPORT_PATH = isDev
-  ? join(__dirname, 'report.xlsx') 
-  : '/var/data/report.xlsx';
+const BUCKET_NAME = 'database';
+const DB_FILE = 'database.xlsx';
+const REPORT_FILE = 'report.xlsx';
 
-// Assicurati che la directory esista
-const ensureDirectory = async () => {
-  if (!isDev) {
-    try {
-      await fs.promises.mkdir('/var/data', { recursive: true });
-    } catch (error) {
-      console.error('Failed to create data directory:', error);
-    }
+async function uploadFile(fileName, buffer) {
+  try {
+    console.log(`Uploading ${fileName} to Supabase storage...`);
+    const { error } = await supabase.storage
+      .from(BUCKET_NAME)
+      .upload(fileName, buffer, {
+        upsert: true,
+        contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+    if (error) throw error;
+    console.log(`Successfully uploaded ${fileName}`);
+  } catch (error) {
+    console.error(`Error uploading ${fileName}:`, error);
+    throw error;
   }
-};
+}
+
+async function downloadFile(fileName) {
+  try {
+    console.log(`Downloading ${fileName} from Supabase storage...`);
+    const { data, error } = await supabase.storage
+      .from(BUCKET_NAME)
+      .download(fileName);
+    if (error) throw error;
+    console.log(`Successfully downloaded ${fileName}`);
+    return await data.arrayBuffer();
+  } catch (error) {
+    console.error(`Error downloading ${fileName}:`, error);
+    throw error;
+  }
+}
+
+async function initializeDB() {
+  try {
+    console.log('Initializing database...');
+    await downloadFile(DB_FILE);
+    await downloadFile(REPORT_FILE);
+    console.log('Database files exist, initialization complete');
+  } catch {
+    console.log('Creating new database files...');
+    const workbook = XLSX.utils.book_new();
+    const sheet = XLSX.utils.json_to_sheet([]);
+    XLSX.utils.book_append_sheet(workbook, sheet, "Database");
+    const buffer = XLSX.write(workbook, { type: 'buffer' });
+    
+    await uploadFile(DB_FILE, buffer);
+    await uploadFile(REPORT_FILE, buffer);
+    console.log('Database initialization complete');
+  }
+}
 
 const app = express();
 
@@ -48,37 +86,20 @@ const ensureDeliverySchedule = (person) => {
   return person;
 };
 
-// Initialize Excel files if they don't exist
-async function initializeDB() {
-  try {
-    await readFile(DB_PATH);
-    await readFile(REPORT_PATH);
-  } catch {
-    // Create empty workbooks if files don't exist
-    const workbook = XLSX.utils.book_new();
-    const sheet = XLSX.utils.json_to_sheet([]);
-    XLSX.utils.book_append_sheet(workbook, sheet, "Database");
-    await writeFile(DB_PATH, XLSX.write(workbook, { type: 'buffer' }));
-    await writeFile(REPORT_PATH, XLSX.write(workbook, { type: 'buffer' }));
-  }
-}
-
-// Aggiungi la chiamata a ensureDirectory prima di initializeDB
 app.use(async (req, res, next) => {
   try {
-    await ensureDirectory();
     await initializeDB();
     next();
   } catch (error) {
-    console.error('Failed to initialize:', error);
-    res.status(500).json({ error: 'Initialization failed' });
+    console.error('Failed to initialize database:', error);
+    res.status(500).json({ error: 'Database initialization failed' });
   }
 });
 
 // Read data from Excel
 async function readData() {
   try {
-    const buffer = await readFile(DB_PATH);
+    const buffer = await downloadFile(DB_FILE);
     const workbook = XLSX.read(buffer);
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
     const data = XLSX.utils.sheet_to_json(sheet);
@@ -112,8 +133,10 @@ async function writeData(data) {
   const dbWorkbook = XLSX.utils.book_new();
   const dbSheet = XLSX.utils.json_to_sheet(preparedData);
   XLSX.utils.book_append_sheet(dbWorkbook, dbSheet, "Database");
-  await writeFile(DB_PATH, XLSX.write(dbWorkbook, { type: 'buffer' }));
   
+  const dbBuffer = XLSX.write(dbWorkbook, { type: 'buffer' });
+  await uploadFile(DB_FILE, dbBuffer);
+
   // Create human-readable report
   const reportData = data.map(person => ({
     'Nome': person.name,
@@ -153,7 +176,9 @@ async function writeData(data) {
   reportSheet['!cols'] = colWidths;
 
   XLSX.utils.book_append_sheet(reportWorkbook, reportSheet, "Report Assistenza");
-  await writeFile(REPORT_PATH, XLSX.write(reportWorkbook, { type: 'buffer' }));
+  
+  const reportBuffer = XLSX.write(reportWorkbook, { type: 'buffer' });
+  await uploadFile(REPORT_FILE, reportBuffer);
 }
 
 // Routes
@@ -214,9 +239,8 @@ app.delete('/api/people/:id', async (req, res) => {
 
 export default app;
 
-
 // Initialize database and start server
-if (isDev) {
+if (process.env.NODE_ENV !== 'production') {
   const PORT = 3000;
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
