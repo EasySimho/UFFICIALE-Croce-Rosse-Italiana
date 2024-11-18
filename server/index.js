@@ -2,24 +2,28 @@ import express from 'express';
 import cors from 'cors';
 import * as XLSX from 'xlsx';
 import { put, list, del } from '@vercel/blob';
+import NodeCache from 'node-cache';
 
 const DB_FILE = 'database.xlsx';
 const REPORT_FILE = 'report.xlsx';
 let latestDbUrl = null; // Cache the latest URL
+const cache = new NodeCache({ stdTTL: 300 }); // 5 min cache
+
+let uploadInProgress = false;
+let pendingUpdates = [];
 
 async function uploadFile(fileName, buffer) {
   try {
     console.log(`Uploading ${fileName} to Vercel Blob...`);
     
-    // Delete old files first
-    const { blobs } = await list();
-    const oldFiles = blobs.filter(b => b.pathname === fileName);
-    
-    // Delete each old file
-    for (const file of oldFiles) {
-      console.log(`Deleting old file: ${file.pathname}`);
-      await del(file.url);
+    // Se c'è già un upload in corso, accoda l'operazione
+    if (uploadInProgress) {
+      console.log('Upload in progress, queuing update...');
+      pendingUpdates.push({ fileName, buffer });
+      return null;
     }
+
+    uploadInProgress = true;
 
     // Upload new file
     const blob = new Blob([buffer], {
@@ -28,18 +32,28 @@ async function uploadFile(fileName, buffer) {
     
     const { url } = await put(fileName, blob, {
       access: 'public',
-      addRandomSuffix: false // Prevent random suffixes
+      addRandomSuffix: false
     });
 
     if (fileName === DB_FILE) {
       latestDbUrl = url;
+      cache.set('dbData', buffer);
     }
-    
-    console.log(`Successfully uploaded ${fileName} at ${url}`);
+
+    console.log(`Successfully uploaded ${fileName}`);
     return url;
   } catch (error) {
     console.error(`Error uploading ${fileName}:`, error);
     throw error;
+  } finally {
+    uploadInProgress = false;
+    // Process pending updates
+    if (pendingUpdates.length > 0) {
+      const next = pendingUpdates.shift();
+      if (next) {
+        uploadFile(next.fileName, next.buffer);
+      }
+    }
   }
 }
 
