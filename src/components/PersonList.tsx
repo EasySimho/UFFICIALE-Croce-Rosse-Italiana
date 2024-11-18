@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plus, Minus, Check, AlertCircle, Trash2, Package } from 'lucide-react';
 import { PackageHistory } from './PackageHistory';
 import { Person } from '../types';
+import  LoadingSpinner  from './LoadingSpinner';
 
 interface PersonListProps {
   people: Person[];
@@ -12,6 +13,16 @@ interface PersonListProps {
 
 export function PersonList({ people, onUpdateBoxes, onToggleComplete, onDelete }: PersonListProps) {
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
+  const [loadingId, setLoadingId] = useState<string | null>(null);
+
+  const handleUpdate = async (id: string, increment: boolean) => {
+    setLoadingId(id);
+    try {
+      await onUpdateBoxes(id, increment);
+    } finally {
+      setLoadingId(null);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -43,22 +54,26 @@ export function PersonList({ people, onUpdateBoxes, onToggleComplete, onDelete }
                 <p className="text-sm text-gray-600 dark:text-gray-400">Pacchi</p>
                 <div className="flex items-center space-x-2">
                   <button
-                    onClick={() => onUpdateBoxes(person.id, false)}
+                    onClick={() => handleUpdate(person.id, false)}
                     className="p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-full"
-                    disabled={person.boxesReceived === 0}
+                    disabled={person.boxesReceived === 0 || loadingId === person.id}
                   >
                     <Minus size={16} className="text-red-600 dark:text-red-400" />
                   </button>
                   <span className="font-semibold">
                     {person.boxesReceived}/{person.boxesNeeded}
                   </span>
-                  <button
-                    onClick={() => onUpdateBoxes(person.id, true)}
-                    className="p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-full"
-                    disabled={person.boxesReceived >= person.boxesNeeded}
-                  >
-                    <Plus size={16} className="text-red-600 dark:text-red-400" />
-                  </button>
+                  {loadingId === person.id ? (
+                    <LoadingSpinner />
+                  ) : (
+                    <button
+                      onClick={() => handleUpdate(person.id, true)}
+                      className="p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-full"
+                      disabled={person.boxesReceived >= person.boxesNeeded || loadingId === person.id}
+                    >
+                      <Plus size={16} className="text-red-600 dark:text-red-400" />
+                    </button>
+                  )}
                 </div>
               </div>
               <button
