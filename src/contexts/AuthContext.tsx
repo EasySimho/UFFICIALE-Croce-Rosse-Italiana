@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface AuthContextType {
   isAuthenticated: boolean;
+  userRole: 'operator' | 'storage' | null;
   login: (username: string, password: string) => boolean;
   logout: () => void;
 }
@@ -12,25 +13,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return localStorage.getItem('isAuthenticated') === 'true';
   });
+  
+  const [userRole, setUserRole] = useState<'operator' | 'storage' | null>(() => {
+    return localStorage.getItem('userRole') as 'operator' | 'storage' | null;
+  });
 
   useEffect(() => {
     localStorage.setItem('isAuthenticated', isAuthenticated.toString());
-  }, [isAuthenticated]);
+    if (userRole) {
+      localStorage.setItem('userRole', userRole);
+    } else {
+      localStorage.removeItem('userRole');
+    }
+  }, [isAuthenticated, userRole]);
 
   const login = (username: string, password: string) => {
-    if (username === 'Operatore' && password === 'CriBiella' || username === 'admin' && password === '>') {
-      setIsAuthenticated(true);
-      return true;
+    if (password === 'CriBiella') {
+      if (username === 'Operatore' || username === 'admin') {
+        setIsAuthenticated(true);
+        setUserRole('operator');
+        return true;
+      } else if (username === 'Magazzino') {
+        setIsAuthenticated(true);
+        setUserRole('storage');
+        return true;
+      }
     }
     return false;
   };
 
   const logout = () => {
     setIsAuthenticated(false);
+    setUserRole(null);
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, userRole, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

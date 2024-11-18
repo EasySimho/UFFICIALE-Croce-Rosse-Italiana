@@ -4,6 +4,7 @@ import { Person } from '../types';
 const BASE_URL = process.env.NODE_ENV === 'production' 
   ? '/api'
   : 'http://localhost:3000/api';
+
 export const api = {
   getPeople: async () => {
     const response = await axios.get(`${BASE_URL}/people`);
@@ -22,6 +23,11 @@ export const api = {
 
   deletePerson: async (id: string) => {
     const response = await axios.delete(`${BASE_URL}/people/${id}`);
+    return response.data;
+  },
+
+  getPerson: async (id: string): Promise<Person> => {
+    const response = await axios.get(`${BASE_URL}/people/${id}`);
     return response.data;
   }
 };

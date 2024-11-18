@@ -2,37 +2,11 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/Emblema_CRI.svg" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CRI Biella</title>
-    <style>
-      body {
-        margin: 0;
-        background-color: #DC2626; /* Tailwind's red-600 */
-      }
-      #loader {
-        position: fixed;
-        inset: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background-color: #DC2626;
-      }
-      #loader img {
-        width: 128px;
-        height: 128px;
-        animation: pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-      }
-      @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: .5; }
-      }
-    </style>
   </head>
   <body>
-    <div id="loader">
-      <img src="/Emblema_CRI.svg" alt="Loading..." />
-    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

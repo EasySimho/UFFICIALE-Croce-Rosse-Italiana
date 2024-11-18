@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
-import { Person, DeliverySchedule } from '../types';
-import LoadingSpinner from './LoadingSpinner';
 
 interface PersonFormProps {
   onSubmit: (person: Omit<Person, 'id' | 'boxesReceived' | 'completed'>) => void;
@@ -26,50 +24,43 @@ export function PersonForm({ onSubmit }: PersonFormProps) {
   });
 
   const [customDays, setCustomDays] = useState<string>('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    try {
-      const finalData = {
-        ...formData,
-        deliverySchedule: {
-          ...formData.deliverySchedule,
-          customDays: formData.deliverySchedule.type === 'custom' 
-            ? customDays.split(',').map(d => parseInt(d.trim())).filter(d => !isNaN(d))
-            : undefined,
-          nextDelivery: formData.deliverySchedule.startDate
-        }
-      };
-      await onSubmit(finalData);
-      setFormData({
-        name: '',
-        surname: '',
-        adults: 0,
-        children: 0,
-        address: '',
-        comune: '',
-        phone: '',
-        boxesNeeded: 0,
-        notes: '',
-        deliverySchedule: {
-          type: 'weekly',
-          startDate: '',
-          nextDelivery: ''
-        }
-      });
-      setCustomDays('');
-    } finally {
-      setIsSubmitting(false);
-    }
+    const finalData = {
+      ...formData,
+      deliverySchedule: {
+        ...formData.deliverySchedule,
+        customDays: formData.deliverySchedule.type === 'custom' 
+          ? customDays.split(',').map(d => parseInt(d.trim())).filter(d => !isNaN(d))
+          : undefined,
+        nextDelivery: formData.deliverySchedule.startDate
+      }
+    };
+    onSubmit(finalData);
+    setFormData({
+      name: '',
+      surname: '',
+      adults: 0,
+      children: 0,
+      address: '',
+      comune: '',
+      phone: '',
+      boxesNeeded: 0,
+      notes: '',
+      deliverySchedule: {
+        type: 'weekly',
+        startDate: '',
+        nextDelivery: ''
+      }
+    });
+    setCustomDays('');
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <input
-          name='Nome'
           type="text"
           placeholder="Nome"
           value={formData.name}
@@ -78,7 +69,6 @@ export function PersonForm({ onSubmit }: PersonFormProps) {
           required
         />
         <input
-          name='Cognome'
           type="text"
           placeholder="Cognome"
           value={formData.surname}
@@ -92,7 +82,6 @@ export function PersonForm({ onSubmit }: PersonFormProps) {
               Numero Adulti (18+)
             </label>
             <input
-              name='Numero Adulti'
               type="number"
               value={formData.adults}
               onChange={(e) => setFormData({ ...formData, adults: parseInt(e.target.value) })}
@@ -106,7 +95,6 @@ export function PersonForm({ onSubmit }: PersonFormProps) {
               Numero Minori
             </label>
             <input
-              name='Numero Minori'
               type="number"
               value={formData.children}
               onChange={(e) => setFormData({ ...formData, children: parseInt(e.target.value) })}
@@ -117,7 +105,6 @@ export function PersonForm({ onSubmit }: PersonFormProps) {
           </div>
         </div>
         <input
-          name='Indirizzo'
           type="text"
           placeholder="Indirizzo"
           value={formData.address}
@@ -126,7 +113,6 @@ export function PersonForm({ onSubmit }: PersonFormProps) {
           required
         />
         <input
-          name='Comune'
           type="text"
           placeholder="Comune"
           value={formData.comune}
@@ -135,7 +121,6 @@ export function PersonForm({ onSubmit }: PersonFormProps) {
           required
         />
         <input
-          name='Telefono'
           type="tel"
           placeholder="Telefono"
           value={formData.phone}
@@ -148,7 +133,6 @@ export function PersonForm({ onSubmit }: PersonFormProps) {
             Pacchi da Ricevere
           </label>
           <input
-            name='Pacchi da Ricevere'
             type="number"
             value={formData.boxesNeeded}
             onChange={(e) => setFormData({ ...formData, boxesNeeded: parseInt(e.target.value) })}
@@ -164,7 +148,6 @@ export function PersonForm({ onSubmit }: PersonFormProps) {
               Frequenza Consegne
             </label>
             <select
-
               value={formData.deliverySchedule.type}
               onChange={(e) => setFormData({
                 ...formData,
@@ -173,7 +156,6 @@ export function PersonForm({ onSubmit }: PersonFormProps) {
                   type: e.target.value as DeliverySchedule['type']
                 }
               })}
-              name='Frequenza Consegne'
               className="input-field"
               required
             >
@@ -204,7 +186,6 @@ export function PersonForm({ onSubmit }: PersonFormProps) {
               Data Inizio
             </label>
             <input
-              name='Data Inizio'
               type="date"
               value={formData.deliverySchedule.startDate}
               onChange={(e) => setFormData({
@@ -222,7 +203,6 @@ export function PersonForm({ onSubmit }: PersonFormProps) {
       </div>
       
       <textarea
-        name='Note'
         placeholder="Note specifiche"
         value={formData.notes}
         onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
@@ -231,17 +211,10 @@ export function PersonForm({ onSubmit }: PersonFormProps) {
       
       <button
         type="submit"
-        disabled={isSubmitting}
         className="w-full bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 text-white font-semibold py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2"
       >
-        {isSubmitting ? (
-          <LoadingSpinner />
-        ) : (
-          <>
-            <Plus size={20} /> Aggiungi Persona
-          </>
-        )}
+        <Plus size={20} /> Aggiungi Persona
       </button>
-    </form> 
+    </form>
   );
 }

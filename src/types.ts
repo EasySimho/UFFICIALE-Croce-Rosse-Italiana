@@ -3,28 +3,30 @@ export interface Person {
   id: string;
   name: string;
   surname: string;
-  address: string;
-  comune: string;
   adults: number;
   children: number;
+  address: string;
+  comune: string;
   phone: string;
   boxesNeeded: number;
   boxesReceived: number;
   completed: boolean;
   notes?: string;
   deliverySchedule: DeliverySchedule;
+  foodList?: FoodItem[];
 }
 
 export interface DeliverySchedule {
   type: 'weekly' | 'monthly' | 'custom';
-  customDays?: number[];  // Days of the month for custom schedule
+  customDays?: number[];
   startDate: string;
   nextDelivery: string;
 }
 
-export interface DeadlineEvent {
+export interface FoodItem {
   id: string;
-  personId: string;
-  date: string;
-  recurring: boolean;
+  productName: string;
+  quantity: number; // in grams
+  units: number;
+  imageUrl?: string;
 }
