@@ -27,11 +27,19 @@ export function PersonForm({ onSubmit }: PersonFormProps) {
 
   const [customDays, setCustomDays] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     setIsSubmitting(true);
+
     try {
+      // Validazione
+      if (!formData.name || !formData.surname) {
+        throw new Error('Nome e cognome sono obbligatori');
+      }
+
       const finalData = {
         ...formData,
         deliverySchedule: {
@@ -42,7 +50,10 @@ export function PersonForm({ onSubmit }: PersonFormProps) {
           nextDelivery: formData.deliverySchedule.startDate
         }
       };
+
       await onSubmit(finalData);
+      
+      // Reset form solo dopo successo
       setFormData({
         name: '',
         surname: '',
@@ -60,6 +71,10 @@ export function PersonForm({ onSubmit }: PersonFormProps) {
         }
       });
       setCustomDays('');
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Errore durante il salvataggio');
+      console.error('Submit error:', err);
     } finally {
       setIsSubmitting(false);
     }
@@ -67,6 +82,11 @@ export function PersonForm({ onSubmit }: PersonFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+      {error && (
+        <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
+          {error}
+        </div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <input
           name='Nome'
