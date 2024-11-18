@@ -16,7 +16,7 @@ async function uploadFile(fileName, buffer) {
     const { url } = await put(fileName, blob, {
       access: 'public',
     });
-    console.log(`Successfully uploaded ${fileName}`);
+    console.log(`Successfully uploaded ${fileName} at ${url}`);
     return url;
   } catch (error) {
     console.error(`Error uploading ${fileName}:`, error);
@@ -31,10 +31,13 @@ async function downloadFile(fileName) {
     const fileBlob = blobs.find(b => b.pathname === fileName);
     
     if (!fileBlob) {
-      throw new Error('File not found');
+      throw new Error(`File ${fileName} not found`);
     }
 
     const response = await fetch(fileBlob.url);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
     const buffer = await response.arrayBuffer();
     console.log(`Successfully downloaded ${fileName}`);
     return buffer;
