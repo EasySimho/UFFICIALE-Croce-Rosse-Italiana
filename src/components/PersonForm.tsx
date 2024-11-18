@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
-import { Person } from '../types';
-import { DeliverySchedule } from '../types';
+import { Person, DeliverySchedule } from '../types';
+import LoadingSpinner from './LoadingSpinner';
 
 interface PersonFormProps {
   onSubmit: (person: Omit<Person, 'id' | 'boxesReceived' | 'completed'>) => void;
@@ -26,37 +26,43 @@ export function PersonForm({ onSubmit }: PersonFormProps) {
   });
 
   const [customDays, setCustomDays] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const finalData = {
-      ...formData,
-      deliverySchedule: {
-        ...formData.deliverySchedule,
-        customDays: formData.deliverySchedule.type === 'custom' 
-          ? customDays.split(',').map(d => parseInt(d.trim())).filter(d => !isNaN(d))
-          : undefined,
-        nextDelivery: formData.deliverySchedule.startDate
-      }
-    };
-    onSubmit(finalData);
-    setFormData({
-      name: '',
-      surname: '',
-      adults: 0,
-      children: 0,
-      address: '',
-      comune: '',
-      phone: '',
-      boxesNeeded: 0,
-      notes: '',
-      deliverySchedule: {
-        type: 'weekly',
-        startDate: '',
-        nextDelivery: ''
-      }
-    });
-    setCustomDays('');
+    setIsSubmitting(true);
+    try {
+      const finalData = {
+        ...formData,
+        deliverySchedule: {
+          ...formData.deliverySchedule,
+          customDays: formData.deliverySchedule.type === 'custom' 
+            ? customDays.split(',').map(d => parseInt(d.trim())).filter(d => !isNaN(d))
+            : undefined,
+          nextDelivery: formData.deliverySchedule.startDate
+        }
+      };
+      await onSubmit(finalData);
+      setFormData({
+        name: '',
+        surname: '',
+        adults: 0,
+        children: 0,
+        address: '',
+        comune: '',
+        phone: '',
+        boxesNeeded: 0,
+        notes: '',
+        deliverySchedule: {
+          type: 'weekly',
+          startDate: '',
+          nextDelivery: ''
+        }
+      });
+      setCustomDays('');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -158,7 +164,7 @@ export function PersonForm({ onSubmit }: PersonFormProps) {
               Frequenza Consegne
             </label>
             <select
-            name='Frequenza Consegne'
+
               value={formData.deliverySchedule.type}
               onChange={(e) => setFormData({
                 ...formData,
@@ -167,6 +173,7 @@ export function PersonForm({ onSubmit }: PersonFormProps) {
                   type: e.target.value as DeliverySchedule['type']
                 }
               })}
+              name='Frequenza Consegne'
               className="input-field"
               required
             >
@@ -224,10 +231,17 @@ export function PersonForm({ onSubmit }: PersonFormProps) {
       
       <button
         type="submit"
+        disabled={isSubmitting}
         className="w-full bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 text-white font-semibold py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2"
       >
-        <Plus size={20} /> Aggiungi Persona
+        {isSubmitting ? (
+          <LoadingSpinner />
+        ) : (
+          <>
+            <Plus size={20} /> Aggiungi Persona
+          </>
+        )}
       </button>
-    </form>
+    </form> 
   );
 }
