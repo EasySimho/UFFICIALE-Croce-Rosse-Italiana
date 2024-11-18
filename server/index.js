@@ -14,8 +14,8 @@ const BUCKET_NAME = 'database';
 const DB_FILE = 'database.xlsx';
 const REPORT_FILE = 'report.xlsx';
 
-// Cache setup (TTL: 5 minuti)
-const cache = new NodeCache({ stdTTL: 300 });
+// Cache setup (TTL: 1 minuti)
+const cache = new NodeCache({ stdTTL: 60 });
 
 // Cache keys
 const CACHE_KEYS = {

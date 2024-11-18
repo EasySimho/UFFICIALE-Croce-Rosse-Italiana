@@ -1,5 +1,6 @@
 import React from 'react';
 import { Plus, Minus, Check, AlertCircle, Trash2 } from 'lucide-react';
+import { Person } from '../types';
 
 interface PersonListProps {
   people: Person[];

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
+import { Person } from '../types';
+import { DeliverySchedule } from '../types';
 
 interface PersonFormProps {
   onSubmit: (person: Omit<Person, 'id' | 'boxesReceived' | 'completed'>) => void;

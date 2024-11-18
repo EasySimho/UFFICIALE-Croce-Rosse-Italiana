@@ -1,6 +1,7 @@
 import React from 'react';
 import { format, addWeeks, addMonths, isBefore } from 'date-fns';
 import { Calendar } from 'lucide-react';
+import { Person } from '../types';
 
 interface DeadlineCalendarProps {
   people: Person[];
