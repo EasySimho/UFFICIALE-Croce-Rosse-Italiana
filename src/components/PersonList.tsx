@@ -27,7 +27,7 @@ export function PersonList({ people, onUpdateBoxes, onToggleComplete, onDelete }
   return (
     <div className="space-y-4">
       {people.map((person) => {
-        const canComplete = person.boxesReceived >= person.boxesNeeded;
+        const canComplete = person.boxes_received >= person.boxes_needed;
         return (
           
                 
@@ -56,12 +56,12 @@ export function PersonList({ people, onUpdateBoxes, onToggleComplete, onDelete }
                   <button
                     onClick={() => handleUpdate(person.id, false)}
                     className="p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-full"
-                    disabled={person.boxesReceived === 0 || loadingId === person.id}
+                    disabled={person.boxes_received === 0 || loadingId === person.id}
                   >
                     <Minus size={16} className="text-red-600 dark:text-red-400" />
                   </button>
                   <span className="font-semibold">
-                    {person.boxesReceived}/{person.boxesNeeded}
+                    {person.boxes_received}/{person.boxes_needed}
                   </span>
                   {loadingId === person.id ? (
                     <LoadingSpinner />
@@ -69,7 +69,7 @@ export function PersonList({ people, onUpdateBoxes, onToggleComplete, onDelete }
                     <button
                       onClick={() => handleUpdate(person.id, true)}
                       className="p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-full"
-                      disabled={person.boxesReceived >= person.boxesNeeded || loadingId === person.id}
+                      disabled={person.boxes_received >= person.boxes_needed || loadingId === person.id}
                     >
                       <Plus size={16} className="text-red-600 dark:text-red-400" />
                     </button>

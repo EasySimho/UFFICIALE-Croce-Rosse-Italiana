@@ -16,9 +16,9 @@ export function PersonForm({ onSubmit }: PersonFormProps) {
     address: '',
     comune: '',
     phone: '',
-    boxesNeeded: 0,
+    boxes_needed: 0,
     notes: '',
-    deliverySchedule: {
+    delivery_schedule: {
       type: 'weekly',
       startDate: '',
       nextDelivery: ''
@@ -40,18 +40,19 @@ export function PersonForm({ onSubmit }: PersonFormProps) {
         throw new Error('Nome e cognome sono obbligatori');
       }
 
-      if (!formData.deliverySchedule.startDate) {
+      if (!formData.delivery_schedule.startDate) {
         throw new Error('Data di inizio è obbligatoria');
       }
 
       const finalData = {
         ...formData,
-        deliverySchedule: {
-          ...formData.deliverySchedule,
-          customDays: formData.deliverySchedule.type === 'custom' 
+        boxesReceived: formData.boxes_needed,
+        delivery_schedule: {
+          ...formData.delivery_schedule,
+          customDays: formData.delivery_schedule.type === 'custom' 
             ? customDays.split(',').map(d => parseInt(d.trim())).filter(d => !isNaN(d))
             : undefined,
-          nextDelivery: formData.deliverySchedule.startDate
+          nextDelivery: formData.delivery_schedule.startDate
         }
       };
 
@@ -66,9 +67,9 @@ export function PersonForm({ onSubmit }: PersonFormProps) {
         address: '',
         comune: '',
         phone: '',
-        boxesNeeded: 0,
+        boxes_needed: 0,
         notes: '',
-        deliverySchedule: {
+        delivery_schedule: {
           type: 'weekly',
           startDate: '',
           nextDelivery: ''
@@ -174,8 +175,8 @@ export function PersonForm({ onSubmit }: PersonFormProps) {
           <input
             name='Pacchi da Ricevere'
             type="number"
-            value={formData.boxesNeeded}
-            onChange={(e) => setFormData({ ...formData, boxesNeeded: parseInt(e.target.value) })}
+            value={formData.boxes_needed}
+            onChange={(e) => setFormData({ ...formData, boxes_needed: parseInt(e.target.value) })}
             className="input-field"
             min="1"
             required
@@ -189,11 +190,11 @@ export function PersonForm({ onSubmit }: PersonFormProps) {
             </label>
             <select
 
-              value={formData.deliverySchedule.type}
+              value={formData.delivery_schedule.type}
               onChange={(e) => setFormData({
                 ...formData,
-                deliverySchedule: {
-                  ...formData.deliverySchedule,
+                delivery_schedule: {
+                  ...formData.delivery_schedule,
                   type: e.target.value as DeliverySchedule['type']
                 }
               })}
@@ -207,7 +208,7 @@ export function PersonForm({ onSubmit }: PersonFormProps) {
             </select>
           </div>
           
-          {formData.deliverySchedule.type === 'custom' && (
+          {formData.delivery_schedule.type === 'custom' && (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Giorni del Mese (separati da virgola)
@@ -230,11 +231,11 @@ export function PersonForm({ onSubmit }: PersonFormProps) {
             <input
               name='Data Inizio'
               type="date"
-              value={formData.deliverySchedule.startDate}
+              value={formData.delivery_schedule.startDate}
               onChange={(e) => setFormData({
                 ...formData,
-                deliverySchedule: {
-                  ...formData.deliverySchedule,
+                delivery_schedule: {
+                  ...formData.delivery_schedule,
                   startDate: e.target.value
                 }
               })}

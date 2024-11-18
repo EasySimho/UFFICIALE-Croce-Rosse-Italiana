@@ -31,7 +31,7 @@ export function Dashboard() {
     }
   };
 
-  const handleAddPerson = async (personData: Omit<Person, 'id' | 'boxesReceived' | 'completed'>) => {
+  const handleAddPerson = async (personData: Omit<Person, 'id' | 'boxes_received' | 'completed'>) => {
     try {
       const newPerson = await api.addPerson(personData);
       setPeople([...people, newPerson]);
@@ -43,9 +43,9 @@ export function Dashboard() {
     const person = people.find(p => p.id === id);
     if (!person) return;
 
-    const newCount = increment ? person.boxesReceived + 1 : person.boxesReceived - 1;
+    const newCount = increment ? person.boxes_received + 1 : person.boxes_received - 1;
     const updates = {
-      boxesReceived: Math.min(Math.max(0, newCount), person.boxesNeeded)
+      boxes_received: Math.min(Math.max(0, newCount), person.boxes_needed)
     };
 
     try {

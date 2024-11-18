@@ -9,14 +9,14 @@ interface PackageHistoryProps {
 
 export function PackageHistory({ person, onClose }: PackageHistoryProps) {
   const getNextDeliveries = () => {
-    if (!person.deliverySchedule || !person.deliverySchedule.startDate) {
+    if (!person.delivery_schedule || !person.delivery_schedule.startDate) {
       return [];
     }
-    const deliveries = [new Date(person.deliverySchedule.startDate)];
-    let nextDelivery = new Date(person.deliverySchedule.startDate);
+    const deliveries = [new Date(person.delivery_schedule.startDate)];
+    let nextDelivery = new Date(person.delivery_schedule.startDate);
     
-    for (let i = 1; i < person.boxesNeeded; i++) {
-      switch (person.deliverySchedule.type) {
+    for (let i = 1; i < person.boxes_needed; i++) {
+      switch (person.delivery_schedule.type) {
         case 'weekly':
           nextDelivery = addWeeks(new Date(nextDelivery), 1);
           break;
@@ -24,7 +24,7 @@ export function PackageHistory({ person, onClose }: PackageHistoryProps) {
           nextDelivery = addMonths(new Date(nextDelivery), 1);
           break;
         case 'custom':
-          const customDays = person.deliverySchedule.customDays || [];
+          const customDays = person.delivery_schedule.customDays || [];
           const currentDay = nextDelivery.getDate();
           const nextDay = customDays.find(day => day > currentDay) || customDays[0];
           nextDelivery = new Date(
@@ -58,23 +58,23 @@ export function PackageHistory({ person, onClose }: PackageHistoryProps) {
             <div 
               key={index}
               className={`flex items-center gap-2 p-2 rounded ${
-                index < person.boxesReceived 
+                index < person.boxes_received 
                   ? 'bg-green-50 dark:bg-green-900/20' 
                   : 'bg-gray-50 dark:bg-gray-700/20'
               }`}
             >
-              {index < person.boxesReceived ? (
+              {index < person.boxes_received ? (
                 <CheckCircle2 className="text-green-600 dark:text-green-400" size={20} />
               ) : (
                 <Circle className="text-gray-400 dark:text-gray-500" size={20} />
               )}
               <span className={
-                index < person.boxesReceived
+                index < person.boxes_received
                   ? 'text-green-700 dark:text-green-300'
                   : 'text-gray-600 dark:text-gray-400'
               }>
                 {format(date, 'dd/MM/yyyy')}
-                {isBefore(date, today) && index >= person.boxesReceived && 
+                {isBefore(date, today) && index >= person.boxes_received && 
                   ' (In ritardo)'}
               </span>
             </div>

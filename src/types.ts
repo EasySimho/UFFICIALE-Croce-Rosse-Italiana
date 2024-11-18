@@ -8,11 +8,11 @@ export interface Person {
   address: string;
   comune: string;
   phone: string;
-  boxesNeeded: number;
-  boxesReceived: number;
+  boxes_needed: number;
+  boxes_received: number;
   completed: boolean;
   notes?: string;
-  deliverySchedule: DeliverySchedule;
+  delivery_schedule: DeliverySchedule;
   foodList?: FoodItem[];
 }
 
