@@ -40,6 +40,10 @@ export function PersonForm({ onSubmit }: PersonFormProps) {
         throw new Error('Nome e cognome sono obbligatori');
       }
 
+      if (!formData.deliverySchedule.startDate) {
+        throw new Error('Data di inizio è obbligatoria');
+      }
+
       const finalData = {
         ...formData,
         deliverySchedule: {

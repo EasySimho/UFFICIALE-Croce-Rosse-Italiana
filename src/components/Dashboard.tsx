@@ -39,7 +39,6 @@ export function Dashboard() {
       console.error('Failed to add person:', error);
     }
   };
-
   const handleUpdateBoxes = async (id: string, increment: boolean) => {
     const person = people.find(p => p.id === id);
     if (!person) return;

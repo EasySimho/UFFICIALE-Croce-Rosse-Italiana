@@ -12,8 +12,13 @@ export const api = {
   },
 
   addPerson: async (person: Omit<Person, 'id' | 'boxesReceived' | 'completed'>) => {
-    const response = await axios.post(`${BASE_URL}/people`, person);
-    return response.data;
+    try {
+      const response = await axios.post(`${BASE_URL}/people`, person);
+      return response.data;
+    } catch (error) {
+      console.error('API Error:', error);
+      throw error;
+    }
   },
 
   updatePerson: async (id: string, updates: Partial<Person>) => {
