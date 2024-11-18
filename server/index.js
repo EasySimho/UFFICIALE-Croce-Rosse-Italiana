@@ -9,12 +9,12 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const isDev = process.env.NODE_ENV !== 'production';
 const DB_PATH = isDev 
   ? join(__dirname, 'database.xlsx')
-  : '/tmp/database.xlsx';  // Usa /tmp per Vercel
+  : '/var/task/database.xlsx';  // Usa /var/task per Vercel
 const REPORT_PATH = isDev
   ? join(__dirname, 'report.xlsx') 
-  : '/tmp/report.xlsx';
+  : '/var/task/report.xlsx';
 
-  const app = express();
+const app = express();
 
 app.use(cors());
 app.use(express.json());
@@ -60,7 +60,6 @@ app.use(async (req, res, next) => {
     res.status(500).json({ error: 'Database initialization failed' });
   }
 });
-
 
 // Read data from Excel
 async function readData() {
@@ -200,7 +199,6 @@ app.delete('/api/people/:id', async (req, res) => {
 });
 
 export default app;
-
 
 // Initialize database and start server
 if (isDev) {
